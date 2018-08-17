@@ -48,6 +48,15 @@ public class CorHttpd extends CordovaPlugin {
 
     @Override
     public void onStart() {
+        if(www_root.startsWith("/")) {
+        	localPath = www_root;
+        } else {
+        	localPath = "www";
+        	if(www_root.length() > 0) {
+        		localPath += "/";
+        		localPath += www_root;
+        	}
+        }
 		__startServer();
     }
 
