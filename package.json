@@ -1,0 +1,8 @@
+{
+  "name": "cordova-httpd",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "https://github.com/paulvarache/cordova-httpd",
+  "author": "Paul Varache <paul@kano.me>",
+  "license": "MIT"
+}
