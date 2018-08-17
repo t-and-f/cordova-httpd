@@ -1,11 +1,8 @@
 package com.rjfun.cordova.httpd;
 
 import java.io.IOException;
-import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.NetworkInterface;
-import java.net.SocketException;
 import java.util.Enumeration;
 
 import org.apache.cordova.CordovaPlugin;
@@ -14,7 +11,6 @@ import org.apache.cordova.PluginResult;
 import org.apache.cordova.PluginResult.Status;
 import org.json.JSONArray;
 import org.json.JSONException;
-import org.json.JSONObject;
 
 import android.util.Log;
 import android.content.Context;
@@ -29,33 +25,41 @@ public class CorHttpd extends CordovaPlugin {
     private static final String LOGTAG = "CorHttpd";
     
     /** Cordova Actions. */
-    private static final String ACTION_START_SERVER = "startServer";
-    private static final String ACTION_STOP_SERVER = "stopServer";
     private static final String ACTION_GET_URL = "getURL";
     private static final String ACTION_GET_LOCAL_PATH = "getLocalPath";
     
-    private static final String OPT_WWW_ROOT = "www_root";
-    private static final String OPT_PORT = "port";
-    private static final String OPT_LOCALHOST_ONLY = "localhost_only";
+    private static final String OPT_WWW_ROOT = "Root";
+    private static final String OPT_PORT = "Port";
+    private static final String OPT_LOCALHOST_ONLY = "LocalhostOnly";
 
     private String www_root = "";
 	private int port = 8888;
-	private boolean localhost_only = false;
+	private boolean localhost_only = true;
 
 	private String localPath = "";
 	private WebServer server = null;
 	private String	url = "";
 
+    public void pluginInitialize() {
+        www_root = preferences.getString(OPT_WWW_ROOT, "");
+        port = preferences.getInteger(OPT_PORT, 8888);
+        localhost_only = preferences.getBoolean(OPT_LOCALHOST_ONLY, true);
+    }
+
+    @Override
+    public void onStart() {
+		__startServer();
+    }
+
+    @Override
+    public void onStop() {
+        __stopServer();
+    }
+
     @Override
     public boolean execute(String action, JSONArray inputs, CallbackContext callbackContext) throws JSONException {
         PluginResult result = null;
-        if (ACTION_START_SERVER.equals(action)) {
-            result = startServer(inputs, callbackContext);
-            
-        } else if (ACTION_STOP_SERVER.equals(action)) {
-            result = stopServer(inputs, callbackContext);
-            
-        } else if (ACTION_GET_URL.equals(action)) {
+        if (ACTION_GET_URL.equals(action)) {
             result = getURL(inputs, callbackContext);
             
         } else if (ACTION_GET_LOCAL_PATH.equals(action)) {
@@ -69,71 +73,6 @@ public class CorHttpd extends CordovaPlugin {
         if(result != null) callbackContext.sendPluginResult( result );
         
         return true;
-    }
-    
-    private String __getLocalIpAddress() {
-    	try {
-            for (Enumeration<NetworkInterface> en = NetworkInterface.getNetworkInterfaces(); en.hasMoreElements();) {
-                NetworkInterface intf = en.nextElement();
-                for (Enumeration<InetAddress> enumIpAddr = intf.getInetAddresses(); enumIpAddr.hasMoreElements();) {
-                    InetAddress inetAddress = enumIpAddr.nextElement();
-                    if (! inetAddress.isLoopbackAddress()) {
-                        if (inetAddress instanceof Inet4Address) {
-                            String ip = inetAddress.getHostAddress();
-                    		Log.w(LOGTAG, "local IP: "+ ip);
-                    		return ip;
-                    	}
-                    }
-                }
-            }
-        } catch (SocketException ex) {
-            Log.e(LOGTAG, ex.toString());
-        }
-    	
-		return "127.0.0.1";
-    }
-
-    private PluginResult startServer(JSONArray inputs, CallbackContext callbackContext) {
-		Log.w(LOGTAG, "startServer");
-
-        JSONObject options = inputs.optJSONObject(0);
-        if(options == null) return null;
-        
-        www_root = options.optString(OPT_WWW_ROOT);
-        port = options.optInt(OPT_PORT, 8888);
-        localhost_only = options.optBoolean(OPT_LOCALHOST_ONLY, false);
-        
-        if(www_root.startsWith("/")) {
-    		//localPath = Environment.getExternalStorageDirectory().getAbsolutePath();
-        	localPath = www_root;
-        } else {
-        	//localPath = "file:///android_asset/www";
-        	localPath = "www";
-        	if(www_root.length()>0) {
-        		localPath += "/";
-        		localPath += www_root;
-        	}
-        }
-
-        final CallbackContext delayCallback = callbackContext;
-        cordova.getActivity().runOnUiThread(new Runnable(){
-			@Override
-            public void run() {
-				String errmsg = __startServer();
-				if (errmsg.length() > 0) {
-					delayCallback.error( errmsg );
-				} else {
-                    if (localhost_only) {
-                        url = "http://127.0.0.1:" + port;
-                    } else {
-                        url = "http://" + __getLocalIpAddress() + ":" + port;
-                    }
-	                delayCallback.success( url );
-				}
-            }
-        });
-        
-        return null;
     }
     
     private String __startServer() {
@@ -176,23 +115,6 @@ public class CorHttpd extends CordovaPlugin {
 		Log.w(LOGTAG, "getLocalPath");
 		
     	callbackContext.success( this.localPath );
-        return null;
-    }
-
-    private PluginResult stopServer(JSONArray inputs, CallbackContext callbackContext) {
-		Log.w(LOGTAG, "stopServer");
-		
-        final CallbackContext delayCallback = callbackContext;
-        cordova.getActivity().runOnUiThread(new Runnable(){
-			@Override
-            public void run() {
-				__stopServer();
-				url = "";
-				localPath = "";
-                delayCallback.success();
-            }
-        });
-        
         return null;
     }
 
