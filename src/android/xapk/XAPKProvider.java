@@ -1,6 +1,6 @@
-package com.rjfun.cordova.httpd.xapk;
+package xapk;
 
-import com.flyingsoftgames.xapkreader.XAPKZipResourceFile.ZipEntryRO;
+import xapk.XAPKZipResourceFile.ZipEntryRO;
 
 import android.content.ContentProvider;
 import android.content.ContentProviderOperation;

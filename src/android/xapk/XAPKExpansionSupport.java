@@ -1,4 +1,4 @@
-package com.rjfun.cordova.httpd.xapk;
+package xapk;
  
 import java.io.File;
 import java.io.FileFilter;

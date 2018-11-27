@@ -1,4 +1,4 @@
-package com.rjfun.cordova.httpd.xapk;
+package xapk;
 
 import android.content.Context;
 import android.app.Activity;
@@ -22,12 +22,12 @@ import android.view.WindowManager;
 import android.util.Log;
 
 import com.google.android.vending.expansion.downloader.DownloadProgressInfo;
-import com.google.android.vending.expansion.downloader.DownloaderClientMarshaller;
-import com.google.android.vending.expansion.downloader.DownloaderServiceMarshaller;
+// import com.google.android.vending.expansion.downloader.DownloaderClientMarshaller;
+// import com.google.android.vending.expansion.downloader.DownloaderServiceMarshaller;
 import com.google.android.vending.expansion.downloader.Helpers;
 import com.google.android.vending.expansion.downloader.IDownloaderClient;
 import com.google.android.vending.expansion.downloader.IDownloaderService;
-import com.google.android.vending.expansion.downloader.IStub;
+// import com.google.android.vending.expansion.downloader.IStub;
 
 import org.apache.cordova.CordovaWebView;
 import java.io.File;
@@ -37,7 +37,7 @@ import java.security.cert.X509Certificate;
 import java.security.cert.CertificateFactory;
 
 public class XAPKDownloaderActivity extends Activity implements IDownloaderClient {
- private IStub mDownloaderClientStub;
+ // private IStub mDownloaderClientStub;
  private IDownloaderService mRemoteService;
  private ProgressDialog mProgressDialog;
  private static final String LOG_TAG = "XAPKDownloader";
@@ -131,9 +131,10 @@ public class XAPKDownloaderActivity extends Activity implements IDownloaderClien
    
    // Start the download service, if required.
    Log.v (LOG_TAG, "Starting the download service.");
-   int startResult = DownloaderClientMarshaller.startDownloadServiceIfRequired (this, pendingIntent, XAPKDownloaderService.class);
+   XAPKDownloaderService service = new XAPKDownloaderService();
+   int startResult = XAPKDownloaderService.startDownloadServiceIfRequired (this, "", pendingIntent, service.getSALT(), service.getPublicKey());
 
-   if (startResult == DownloaderClientMarshaller.NO_DOWNLOAD_REQUIRED) {
+   if (startResult == XAPKDownloaderService.NO_DOWNLOAD_REQUIRED) {
     if ( !autoReload ) {
       final Intent intent = new Intent("XAPK_Download_finished");
       LocalBroadcastManager.getInstance(this).sendBroadcastSync(intent);
@@ -146,7 +147,7 @@ public class XAPKDownloaderActivity extends Activity implements IDownloaderClien
    // If download has started, initialize activity to show progress.
    Log.v (LOG_TAG, "Initializing activity to show progress.");
    // Instantiate a member instance of IStub.
-   mDownloaderClientStub = DownloaderClientMarshaller.CreateStub (this, XAPKDownloaderService.class);
+   // mDownloaderClientStub = DownloaderClientMarshaller.CreateStub (this, XAPKDownloaderService.class);
    // Shows download progress.
    mProgressDialog = new ProgressDialog (XAPKDownloaderActivity.this);
    mProgressDialog.setProgressStyle (ProgressDialog.STYLE_HORIZONTAL);
@@ -185,25 +186,25 @@ public class XAPKDownloaderActivity extends Activity implements IDownloaderClien
  
  // Connect the stub to our service on start.
  @Override protected void onStart () {
-  if (null != mDownloaderClientStub) mDownloaderClientStub.connect (this);
+  // if (null != mDownloaderClientStub) mDownloaderClientStub.connect (this);
   super.onStart ();
  }
  
  // Connect the stub from our service on resume.
  @Override protected void onResume () {
-  if (null != mDownloaderClientStub) mDownloaderClientStub.connect (this);
+  // if (null != mDownloaderClientStub) mDownloaderClientStub.connect (this);
   super.onResume ();
  }
  
  // Disconnect the stub from our service on stop.
  @Override protected void onStop () {
-  if (null != mDownloaderClientStub) mDownloaderClientStub.disconnect (this);
+  // if (null != mDownloaderClientStub) mDownloaderClientStub.disconnect (this);
   super.onStop ();
  }
  
- @Override public void onServiceConnected (Messenger m) {
-  mRemoteService = DownloaderServiceMarshaller.CreateProxy (m);
-  mRemoteService.onClientUpdated (mDownloaderClientStub.getMessenger());
+ /* @Override */ public void onServiceConnected (Messenger m) {
+// mRemoteService = DownloaderServiceMarshaller.CreateProxy (m);
+  // mRemoteService.onClientUpdated (mDownloaderClientStub.getMessenger());
  }
  
  @Override public void onDownloadProgress (DownloadProgressInfo progress) {

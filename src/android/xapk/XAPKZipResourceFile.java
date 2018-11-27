@@ -15,7 +15,7 @@
  
  // Modifications: syntax, formatting, and making pesky addPatchFile public...
  
- package com.rjfun.cordova.httpd.xapk;
+ package xapk;
 
 import android.content.res.AssetFileDescriptor;
 import android.os.ParcelFileDescriptor;
