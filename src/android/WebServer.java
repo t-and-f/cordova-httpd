@@ -11,9 +11,12 @@ import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.nio.file.PathMatcher;
 import java.nio.file.Paths;
+import java.util.Arrays;
 
 import android.content.Context;
+import android.content.res.AssetFileDescriptor;
 import android.util.Log;
+
 
 public class WebServer extends NanoHTTPD
 {
@@ -45,6 +48,9 @@ public class WebServer extends NanoHTTPD
 		this.expansionFile = XAPKExpansionSupport.getAPKExpansionZipFile(ctx, 1, 1);
 		if (null != this.expansionFile) {
 			Log.i( LOGTAG, "Expansion file: " + this.expansionFile.toString() );
+
+			Object[] listing = this.expansionFile.getAllEntries();
+			Log.i( LOGTAG, "Expansion file content: " + Arrays.toString(listing) );
 		}
 	}
 
@@ -62,36 +68,25 @@ public class WebServer extends NanoHTTPD
 	{
 		FileSystem fileSystem = FileSystems.getDefault();
 		PathMatcher matcher = fileSystem.getPathMatcher("glob:/www/assets/**");
-
+		
 		if (matcher.matches(Paths.get(uri))) {
+			String path = (uri.split("/www/assets/"))[1];
+			AssetFileDescriptor result;
 			Log.i( LOGTAG, method + " '" + uri + "' is in target folder" );
+			
+			try {
+				result = this.expansionFile.getAssetFileDescriptor(path);
+				Log.i( LOGTAG, "Retrieved " + path);
+				
+			} catch (Exception e) {
+				// throw new FileNotFoundException();
+				Log.e( LOGTAG, "Failed to retrieve " + path);
+			}
 		}
 		else {
 			Log.i( LOGTAG, method + " '" + uri + "' " );
 		}
 
-		/*
-			Enumeration e = header.propertyNames();
-			while ( e.hasMoreElements())
-			{
-				String value = (String)e.nextElement();
-				Log.i( LOGTAG, "  HDR: '" + value + "' = '" + header.getProperty( value ) + "'" );
-			}
-			
-			e = parms.propertyNames();
-			while ( e.hasMoreElements())
-			{
-				String value = (String)e.nextElement();
-				Log.i( LOGTAG, "  PRM: '" + value + "' = '" + parms.getProperty( value ) + "'" );
-			}
-			
-			e = files.propertyNames();
-			while ( e.hasMoreElements())
-			{
-				String value = (String)e.nextElement();
-				Log.i( LOGTAG, "  UPLOADED: '" + value + "' = '" + files.getProperty( value ) + "'" );
-			}
-		*/
 		return serveFile( uri, header, myRootDir, true );
 	}
 }
