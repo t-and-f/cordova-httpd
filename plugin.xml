@@ -49,7 +49,6 @@
 		<source-file src="src/android/xapk/XAPKDownloaderActivity.java" target-dir="src/com/rjfun/cordova/httpd/xapk" />
 		<source-file src="src/android/xapk/XAPKDownloaderService.java" target-dir="src/com/rjfun/cordova/httpd/xapk" />
 		<source-file src="src/android/xapk/XAPKExpansionSupport.java" target-dir="src/com/rjfun/cordova/httpd/xapk" />
-		<source-file src="src/android/xapk/XAPKProvider.java" target-dir="src/com/rjfun/cordova/httpd/xapk" />
 		<source-file src="src/android/xapk/XAPKZipResourceFile.java" target-dir="src/com/rjfun/cordova/httpd/xapk" />
 	</platform>
 	<platform name="ios">
