@@ -114,7 +114,7 @@ public class WebServer extends NanoHTTPD {
 		Response res = null;
 		AssetFileDescriptor result = null;
 		FileInputStream in = null;
-		
+
 		// Remove URL arguments
 		path = path.trim().replace(File.separatorChar, '/');
 		if (path.indexOf('?') >= 0)
@@ -167,32 +167,37 @@ public class WebServer extends NanoHTTPD {
 				long fileLen = (null != result) ? result.getLength() : 0;
 				// System.out.println( String.format("file length: %d", fileLen));
 
-				if (range != null && startFrom >= 0) {
-					if (startFrom >= fileLen) {
-						res = new Response(HTTP_RANGE_NOT_SATISFIABLE, MIME_PLAINTEXT, "");
-						res.addHeader("Content-Range", "bytes 0-0/" + fileLen);
+				if (null != in) {
+					if (range != null && startFrom >= 0) {
+						if (startFrom >= fileLen) {
+							res = new Response(HTTP_RANGE_NOT_SATISFIABLE, MIME_PLAINTEXT, "");
+							res.addHeader("Content-Range", "bytes 0-0/" + fileLen);
+						} else {
+							if (endAt < 0)
+								endAt = fileLen - 1;
+							long newLen = endAt - startFrom + 1;
+							if (newLen < 0)
+								newLen = 0;
+
+							final long dataLen = newLen;
+							// InputStream fis = new FileInputStream( f ) {
+							// public int available() throws IOException { return (int)dataLen; }
+							// };
+							InputStream fis = in;
+							fis.skip(startFrom);
+
+							res = new Response(HTTP_PARTIALCONTENT, mime, fis);
+							res.addHeader("Content-Length", "" + dataLen);
+							res.addHeader("Content-Range", "bytes " + startFrom + "-" + endAt + "/" + fileLen);
+						}
 					} else {
-						if (endAt < 0)
-							endAt = fileLen - 1;
-						long newLen = endAt - startFrom + 1;
-						if (newLen < 0)
-							newLen = 0;
+						// res = new Response( HTTP_OK, mime, new FileInputStream( f ));
+						res = new Response(HTTP_OK, mime, in);
+						res.addHeader("Content-Length", "" + fileLen);
 
-						final long dataLen = newLen;
-						// InputStream fis = new FileInputStream( f ) {
-						// public int available() throws IOException { return (int)dataLen; }
-						// };
-						InputStream fis = in;
-						fis.skip(startFrom);
-
-						res = new Response(HTTP_PARTIALCONTENT, mime, fis);
-						res.addHeader("Content-Length", "" + dataLen);
-						res.addHeader("Content-Range", "bytes " + startFrom + "-" + endAt + "/" + fileLen);
 					}
 				} else {
-					// res = new Response( HTTP_OK, mime, new FileInputStream( f ));
-					res = new Response(HTTP_OK, mime, in);
-					res.addHeader("Content-Length", "" + fileLen);
+					res = new Response(HTTP_NOTFOUND, MIME_PLAINTEXT, "Failed to retrieve " + path);
 
 				}
 			}
