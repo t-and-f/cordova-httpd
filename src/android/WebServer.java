@@ -2,6 +2,8 @@ package com.rjfun.cordova.httpd;
 
 import xapk.*;
 
+import org.apache.cordova.CordovaInterface;
+
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.Properties;
@@ -9,7 +11,6 @@ import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.nio.file.PathMatcher;
 import java.nio.file.Paths;
-import java.util.Arrays;
 
 import android.content.Context;
 import android.util.Log;
@@ -18,24 +19,33 @@ public class WebServer extends NanoHTTPD
 {
 	private final String LOGTAG = "CorHTTPD";
 
+	private CordovaInterface cordova = null;
+
 	private AndroidFile myRootDir = null;
 
 	private XAPKZipResourceFile expansionFile = null;
 
-	public WebServer(InetSocketAddress localAddr, AndroidFile wwwroot, Context ctx) throws IOException {
+	public WebServer(InetSocketAddress localAddr, AndroidFile wwwroot, CordovaInterface cordova) throws IOException {
 		super(localAddr, wwwroot);
 		myRootDir = wwwroot;
+		this.cordova = cordova;
+		this.fetchAPK(cordova.getActivity().getApplicationContext());
+	}
+
+	public WebServer(int port, AndroidFile wwwroot, CordovaInterface cordova) throws IOException {
+		super(port, wwwroot);
+		myRootDir = wwwroot;
+		this.cordova = cordova;
+		this.fetchAPK(cordova.getActivity().getApplicationContext());
+	}
+
+	private void fetchAPK(Context ctx) throws IOException {
 		Log.i( LOGTAG, "OBB dir: " + ctx.getObbDir());
 		// Retrieve the expansion file.
 		this.expansionFile = XAPKExpansionSupport.getAPKExpansionZipFile(ctx, 1, 1);
 		if (null != this.expansionFile) {
 			Log.i( LOGTAG, "Expansion file: " + this.expansionFile.toString() );
 		}
-	}
-
-	public WebServer(int port, AndroidFile wwwroot, Context ctx ) throws IOException {
-		super(port, wwwroot);
-		myRootDir = wwwroot;
 	}
 
 	/*
