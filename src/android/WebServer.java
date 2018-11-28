@@ -27,19 +27,19 @@ public class WebServer extends NanoHTTPD
 
 	public WebServer(InetSocketAddress localAddr, AndroidFile wwwroot, CordovaInterface cordova) throws IOException {
 		super(localAddr, wwwroot);
-		myRootDir = wwwroot;
-		this.cordova = cordova;
-		this.fetchAPK(cordova.getActivity().getApplicationContext());
+		this.init(wwwroot, cordova);
 	}
 
 	public WebServer(int port, AndroidFile wwwroot, CordovaInterface cordova) throws IOException {
 		super(port, wwwroot);
-		myRootDir = wwwroot;
-		this.cordova = cordova;
-		this.fetchAPK(cordova.getActivity().getApplicationContext());
+		this.init(wwwroot, cordova);
 	}
 
-	private void fetchAPK(Context ctx) throws IOException {
+	private void init(AndroidFile wwwroot, CordovaInterface cordova) throws IOException {
+		this.myRootDir = wwwroot;
+		this.cordova = cordova;
+		Context ctx = cordova.getActivity().getApplicationContext();
+
 		Log.i( LOGTAG, "OBB dir: " + ctx.getObbDir());
 		// Retrieve the expansion file.
 		this.expansionFile = XAPKExpansionSupport.getAPKExpansionZipFile(ctx, 1, 1);
