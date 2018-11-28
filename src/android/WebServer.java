@@ -9,7 +9,9 @@ import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.nio.file.PathMatcher;
 import java.nio.file.Paths;
+import java.util.Arrays;
 
+import android.content.Context;
 import android.util.Log;
 
 public class WebServer extends NanoHTTPD
@@ -18,12 +20,20 @@ public class WebServer extends NanoHTTPD
 
 	private AndroidFile myRootDir = null;
 
-	public WebServer(InetSocketAddress localAddr, AndroidFile wwwroot) throws IOException {
+	private XAPKZipResourceFile expansionFile = null;
+
+	public WebServer(InetSocketAddress localAddr, AndroidFile wwwroot, Context ctx) throws IOException {
 		super(localAddr, wwwroot);
 		myRootDir = wwwroot;
+		Log.i( LOGTAG, "OBB dir: " + ctx.getObbDir());
+		// Retrieve the expansion file.
+		this.expansionFile = XAPKExpansionSupport.getAPKExpansionZipFile(ctx, 1, 1);
+		if (null != this.expansionFile) {
+			Log.i( LOGTAG, "Expansion file: " + this.expansionFile.toString() );
+		}
 	}
 
-	public WebServer(int port, AndroidFile wwwroot ) throws IOException {
+	public WebServer(int port, AndroidFile wwwroot, Context ctx ) throws IOException {
 		super(port, wwwroot);
 		myRootDir = wwwroot;
 	}
