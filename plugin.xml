@@ -41,6 +41,7 @@
 		</config-file>
 		<framework src="com.github.bolein:better-licensing:1.5.0" />
 		<framework src="com.github.bolein.better-apk-expansion:downloader_library:5.0.3" />
+		<framework src="com.google.code.gson:gson:2.8.5" />
 		<framework src="build-extras.gradle" custom="true" type="gradleReference" />
 		<source-file src="src/android/CorHttpd.java" target-dir="src/com/rjfun/cordova/httpd" />
 		<source-file src="src/android/AndroidFile.java" target-dir="src/com/rjfun/cordova/httpd" />
