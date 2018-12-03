@@ -3,6 +3,7 @@ package com.rjfun.cordova.httpd;
 import xapk.*;
 
 import org.apache.cordova.CordovaInterface;
+import com.google.code.gson;
 
 import java.io.File;
 import java.io.FileInputStream;
