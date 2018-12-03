@@ -9,9 +9,6 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.InetSocketAddress;
-import java.nio.file.FileSystem;
-import java.nio.file.FileSystems;
-import java.nio.file.PathMatcher;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Hashtable;
@@ -92,11 +89,10 @@ public class WebServer extends NanoHTTPD {
 	 */
 	@SuppressWarnings("rawtypes")
 	public Response serve(String uri, String method, Properties header, Properties parms, Properties files) {
-		FileSystem fileSystem = FileSystems.getDefault();
-		PathMatcher matcher = fileSystem.getPathMatcher("glob:/www/assets/**");
+		String basePath = "/www/assets/";
 
-		if (matcher.matches(Paths.get(uri))) {
-			String path = (uri.split("/www/assets/"))[1];
+		if (uri.startsWith(basePath)) {
+			String path = (uri.split(basePath))[1];
 			Log.i(LOGTAG, method + " '" + uri + "' is in target folder");
 			return this.serveFromAPK(path, header, myRootDir);
 
@@ -209,3 +205,4 @@ public class WebServer extends NanoHTTPD {
 		return res;
 	}
 }
+
