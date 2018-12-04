@@ -21,6 +21,7 @@ import java.net.InetSocketAddress;
 import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.Hashtable;
+import java.util.Map;
 import java.util.Properties;
 import java.util.StringTokenizer;
 
@@ -146,6 +147,11 @@ public class WebServer extends NanoHTTPD {
 		this.webView = webView;
 		Context ctx = cordova.getActivity().getApplicationContext();
 
+		CordovaUtils utils = new CordovaUtils();
+		Map configs = utils.loadConfigFromXml(cordova.getActivity().getResources(), ctx.getPackageName());
+
+		Log.i(LOGTAG, configs.toString());
+
 		try {
 			this.parseAPKLayout();
 		} catch (IOException | JsonParseException ex) {
@@ -160,6 +166,9 @@ public class WebServer extends NanoHTTPD {
 		// into one XAPKZipResourceFile resource. Any file is requested is
 		// looked up first in the patch APK, then the main.
 		int version = Integer.parseInt(this.apkVersion);
+
+		// this.downloadExpansionIfAvailable();
+
 		this.expansionFile = XAPKExpansionSupport.getAPKExpansionZipFile(ctx, version, version);
 		if (null != this.expansionFile) {
 			if (DEBUG)

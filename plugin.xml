@@ -29,6 +29,7 @@
 		<clobbers target="cordova.plugins.CorHttpd" />
 	</js-module>
 	<platform name="android">
+		<preference name="XAPK_PUBLIC_KEY" default="" />
 		<config-file parent="/*" target="res/xml/config.xml">
 			<feature name="CorHttpd">
 				<param name="android-package" value="com.rjfun.cordova.httpd.CorHttpd" />
@@ -44,6 +45,7 @@
 		<framework src="com.google.code.gson:gson:2.8.5" />
 		<framework src="build-extras.gradle" custom="true" type="gradleReference" />
 		<source-file src="src/android/CorHttpd.java" target-dir="src/com/rjfun/cordova/httpd" />
+		<source-file src="src/android/CordovaUtils.java" target-dir="src/com/rjfun/cordova/httpd" />
 		<source-file src="src/android/AndroidFile.java" target-dir="src/com/rjfun/cordova/httpd" />
 		<source-file src="src/android/NanoHTTPD.java" target-dir="src/com/rjfun/cordova/httpd" />
 		<source-file src="src/android/WebServer.java" target-dir="src/com/rjfun/cordova/httpd" />
