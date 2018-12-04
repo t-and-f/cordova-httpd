@@ -67,12 +67,14 @@ public class WebServer extends NanoHTTPD {
 			mimeTypes.put(st.nextToken(), st.nextToken());
 	}
 
-	public WebServer(InetSocketAddress localAddr, AndroidFile wwwroot, CordovaInterface cordova, CordovaWebView webview) throws IOException {
+	public WebServer(InetSocketAddress localAddr, AndroidFile wwwroot, CordovaInterface cordova, CordovaWebView webview)
+			throws IOException {
 		super(localAddr, wwwroot);
 		this.init(wwwroot, cordova, webview);
 	}
 
-	public WebServer(int port, AndroidFile wwwroot, CordovaInterface cordova, CordovaWebView webview) throws IOException {
+	public WebServer(int port, AndroidFile wwwroot, CordovaInterface cordova, CordovaWebView webview)
+			throws IOException {
 		super(port, wwwroot);
 		this.init(wwwroot, cordova, webview);
 	}
@@ -167,12 +169,14 @@ public class WebServer extends NanoHTTPD {
 		// looked up first in the patch APK, then the main.
 		int version = Integer.parseInt(this.apkVersion);
 
-		// this.downloadExpansionIfAvailable();
-
-		this.expansionFile = XAPKExpansionSupport.getAPKExpansionZipFile(ctx, version, version);
-		if (null != this.expansionFile) {
-			if (DEBUG)
-				Log.i(LOGTAG, "Expansion file: " + this.expansionFile.toString());
+		if (utils.signatureIsDebug(ctx)) {
+			this.expansionFile = XAPKExpansionSupport.getAPKExpansionZipFile(ctx, version, version);
+			if (null != this.expansionFile) {
+				if (DEBUG)
+					Log.i(LOGTAG, "Expansion file: " + this.expansionFile.toString());
+			}
+		} else {
+			this.downloadExpansionIfAvailable();
 		}
 	}
 
