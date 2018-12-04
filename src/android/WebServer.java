@@ -18,7 +18,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.InetSocketAddress;
 import java.util.Arrays;
-import java.util.List;
 import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.Properties;
@@ -48,7 +47,7 @@ public class WebServer extends NanoHTTPD {
 	 * Hashtable mapping (String)FILENAME_EXTENSION -> (String)MIME_TYPE
 	 */
 	@SuppressWarnings("rawtypes")
-	private Hashtable mimeTypes = new Hashtable();
+	private Hashtable<String,String> mimeTypes = new Hashtable<>();
 	{
 		StringTokenizer st = new StringTokenizer("css		text/css " + "htm		text/html " + "html		text/html "
 				+ "xml		text/xml " + "txt		text/plain " + "asc		text/plain " + "gif		image/gif "
@@ -97,7 +96,7 @@ public class WebServer extends NanoHTTPD {
 
 				if (layoutNode.has("main")) {
 					JsonArray main = layoutNode.getAsJsonArray("main");
-					List<String> mainRecords = gson.fromJson(main, List.class);
+					String[] mainRecords = gson.fromJson(main, String[].class);
 					for (String mainEntry : mainRecords) {
 						if (DEBUG) Log.i(LOGTAG, mainEntry);
 						this.activePaths.add(mainEntry);
@@ -106,7 +105,7 @@ public class WebServer extends NanoHTTPD {
 
 				if (layoutNode.has("patch")) {
 					JsonArray patch = layoutNode.getAsJsonArray("patch");
-					List<String> patchRecords = gson.fromJson(patch, List.class);
+					String[] patchRecords = gson.fromJson(patch, String[].class);
 					for (String patchEntry : patchRecords) {
 						if (DEBUG) Log.i(LOGTAG, patchEntry);
 						this.activePaths.add(patchEntry);
