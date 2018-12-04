@@ -3,6 +3,7 @@ package com.rjfun.cordova.httpd;
 import xapk.*;
 
 import org.apache.cordova.CordovaInterface;
+import org.apache.cordova.CordovaWebView;
 import com.google.gson.Gson;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonElement;
@@ -24,6 +25,7 @@ import java.util.Properties;
 import java.util.StringTokenizer;
 
 import android.content.Context;
+import android.content.Intent;
 import android.content.res.AssetManager;
 import android.content.res.AssetFileDescriptor;
 import android.util.Log;
@@ -31,9 +33,11 @@ import android.util.Log;
 public class WebServer extends NanoHTTPD {
 	private final String LOGTAG = "CorHTTPD";
 
-	private final Boolean DEBUG = true; 
+	private final Boolean DEBUG = true;
 
 	private CordovaInterface cordova = null;
+
+	private CordovaWebView webView = null;
 
 	private AndroidFile myRootDir = null;
 
@@ -47,7 +51,7 @@ public class WebServer extends NanoHTTPD {
 	 * Hashtable mapping (String)FILENAME_EXTENSION -> (String)MIME_TYPE
 	 */
 	@SuppressWarnings("rawtypes")
-	private Hashtable<String,String> mimeTypes = new Hashtable<>();
+	private Hashtable<String, String> mimeTypes = new Hashtable<>();
 	{
 		StringTokenizer st = new StringTokenizer("css		text/css " + "htm		text/html " + "html		text/html "
 				+ "xml		text/xml " + "txt		text/plain " + "asc		text/plain " + "gif		image/gif "
@@ -62,43 +66,46 @@ public class WebServer extends NanoHTTPD {
 			mimeTypes.put(st.nextToken(), st.nextToken());
 	}
 
-	public WebServer(InetSocketAddress localAddr, AndroidFile wwwroot, CordovaInterface cordova) throws IOException {
+	public WebServer(InetSocketAddress localAddr, AndroidFile wwwroot, CordovaInterface cordova, CordovaWebView webview) throws IOException {
 		super(localAddr, wwwroot);
-		this.init(wwwroot, cordova);
+		this.init(wwwroot, cordova, webview);
 	}
 
-	public WebServer(int port, AndroidFile wwwroot, CordovaInterface cordova) throws IOException {
+	public WebServer(int port, AndroidFile wwwroot, CordovaInterface cordova, CordovaWebView webview) throws IOException {
 		super(port, wwwroot);
-		this.init(wwwroot, cordova);
+		this.init(wwwroot, cordova, webview);
 	}
 
 	private void parseAPKLayout() throws IOException, JsonParseException {
 		// Read config of xapk(s).
 		AssetManager assetManager = this.cordova.getActivity().getAssets();
 		Gson gson = new Gson();
-		BufferedReader configReader = new BufferedReader(new InputStreamReader(assetManager.open("www/www/xapk-conf.json")));
-		
-		JsonParser parser = new JsonParser();  
-		JsonElement rootNode = parser.parse(configReader); 
-		configReader.close();		  
+		BufferedReader configReader = new BufferedReader(
+				new InputStreamReader(assetManager.open("www/www/xapk-conf.json")));
 
-		if (DEBUG) Log.i(LOGTAG, "Parsed JSON config to tree");
+		JsonParser parser = new JsonParser();
+		JsonElement rootNode = parser.parse(configReader);
+		configReader.close();
+
+		if (DEBUG)
+			Log.i(LOGTAG, "Parsed JSON config to tree");
 		if (rootNode.isJsonObject()) {
-			JsonObject root = rootNode.getAsJsonObject(); 
+			JsonObject root = rootNode.getAsJsonObject();
 
 			if (root.has("apkVersion")) {
 				this.apkVersion = root.get("apkVersion").getAsString();
 			}
-			
+
 			if (root.has("layout")) {
-				JsonElement layout = root.get("layout");  
+				JsonElement layout = root.get("layout");
 				JsonObject layoutNode = layout.getAsJsonObject();
 
 				if (layoutNode.has("main")) {
 					JsonArray main = layoutNode.getAsJsonArray("main");
 					String[] mainRecords = gson.fromJson(main, String[].class);
 					for (String mainEntry : mainRecords) {
-						if (DEBUG) Log.i(LOGTAG, mainEntry);
+						if (DEBUG)
+							Log.i(LOGTAG, mainEntry);
 						this.activePaths.add(mainEntry);
 					}
 				}
@@ -107,7 +114,8 @@ public class WebServer extends NanoHTTPD {
 					JsonArray patch = layoutNode.getAsJsonArray("patch");
 					String[] patchRecords = gson.fromJson(patch, String[].class);
 					for (String patchEntry : patchRecords) {
-						if (DEBUG) Log.i(LOGTAG, patchEntry);
+						if (DEBUG)
+							Log.i(LOGTAG, patchEntry);
 						this.activePaths.add(patchEntry);
 					}
 				}
@@ -115,28 +123,47 @@ public class WebServer extends NanoHTTPD {
 		}
 	}
 
-	private void init(AndroidFile wwwroot, CordovaInterface cordova) throws IOException {
+	private void downloadExpansionIfAvailable() {
+		cordova.getActivity().runOnUiThread(new Runnable() {
+			@Override
+			public void run() {
+				XAPKDownloaderActivity.cordovaActivity = cordova.getActivity(); // Workaround for Cordova/Crosswalk
+																				// flickering status bar bug.
+				// Provide a webview to Downloader Activity so it can trigger a page reload once
+				// the expansion is downloaded.
+				XAPKDownloaderActivity.cordovaWebView = webView;
+				Context context = cordova.getActivity().getApplicationContext();
+				Intent intent = new Intent(context, XAPKDownloaderActivity.class);
+				// intent.putExtras(bundle);
+				cordova.getActivity().startActivity(intent);
+			}
+		});
+	}
+
+	private void init(AndroidFile wwwroot, CordovaInterface cordova, CordovaWebView webView) throws IOException {
 		this.myRootDir = wwwroot;
 		this.cordova = cordova;
+		this.webView = webView;
 		Context ctx = cordova.getActivity().getApplicationContext();
 
 		try {
 			this.parseAPKLayout();
-		}
-		catch(IOException | JsonParseException ex) {
+		} catch (IOException | JsonParseException ex) {
 			Log.e(LOGTAG, "Could not parse the apk layout file", ex);
 		}
 
 		// Retrieve the expansion file(s).
-		if (DEBUG) Log.i(LOGTAG, "OBB dir: " + ctx.getObbDir());
+		if (DEBUG)
+			Log.i(LOGTAG, "OBB dir: " + ctx.getObbDir());
 
-		// By design, Google libraries bundle both APK Expansions, if available, 
-		// into one XAPKZipResourceFile resource. Any file is requested is 
+		// By design, Google libraries bundle both APK Expansions, if available,
+		// into one XAPKZipResourceFile resource. Any file is requested is
 		// looked up first in the patch APK, then the main.
-		int version = Integer.parseInt(this.apkVersion); 
+		int version = Integer.parseInt(this.apkVersion);
 		this.expansionFile = XAPKExpansionSupport.getAPKExpansionZipFile(ctx, version, version);
 		if (null != this.expansionFile) {
-			if (DEBUG) Log.i(LOGTAG, "Expansion file: " + this.expansionFile.toString());
+			if (DEBUG)
+				Log.i(LOGTAG, "Expansion file: " + this.expansionFile.toString());
 		}
 	}
 
@@ -158,20 +185,22 @@ public class WebServer extends NanoHTTPD {
 	public Response serve(String uri, String method, Properties header, Properties parms, Properties files) {
 		boolean inApk = false;
 		String realPath = uri.startsWith("/www/") ? uri.replaceFirst("/www/", "") : uri;
-		
+
 		// Check if uri is part of apk definitions
-		for (String activePath: this.activePaths) {
+		for (String activePath : this.activePaths) {
 			if (realPath.startsWith(activePath)) {
 				inApk = true;
 			}
 		}
-		
+
 		if (inApk) {
-			if (DEBUG) Log.i(LOGTAG, method + " '" + uri + "' is in target folder");
+			if (DEBUG)
+				Log.i(LOGTAG, method + " '" + uri + "' is in target folder");
 			return this.serveFromAPK(realPath, header, myRootDir);
 
 		} else {
-			if (DEBUG) Log.i(LOGTAG, method + " '" + uri + "' ");
+			if (DEBUG)
+				Log.i(LOGTAG, method + " '" + uri + "' ");
 			return serveFile(uri, header, myRootDir, true);
 		}
 	}
@@ -196,12 +225,15 @@ public class WebServer extends NanoHTTPD {
 
 		try {
 			result = this.expansionFile.getAssetFileDescriptor(path);
-			if (DEBUG) Log.i(LOGTAG, "Retrieved " + path);
-			if (DEBUG) Log.i(LOGTAG, result.toString());
+			if (DEBUG)
+				Log.i(LOGTAG, "Retrieved " + path);
+			if (DEBUG)
+				Log.i(LOGTAG, result.toString());
 			in = result.createInputStream();
 		} catch (Exception e) {
 			// throw new FileNotFoundException();
-			if (DEBUG) Log.e(LOGTAG, "Failed to retrieve " + path);
+			if (DEBUG)
+				Log.e(LOGTAG, "Failed to retrieve " + path);
 			res = new Response(HTTP_INTERNALERROR, MIME_PLAINTEXT, "Failed to retrieve " + path);
 		}
 
