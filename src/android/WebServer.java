@@ -137,7 +137,6 @@ public class WebServer extends NanoHTTPD {
 				XAPKDownloaderActivity.cordovaWebView = webView;
 				Context context = cordova.getActivity().getApplicationContext();
 				Intent intent = new Intent(context, XAPKDownloaderActivity.class);
-				// intent.putExtras(bundle);
 				cordova.getActivity().startActivity(intent);
 			}
 		});
@@ -148,11 +147,6 @@ public class WebServer extends NanoHTTPD {
 		this.cordova = cordova;
 		this.webView = webView;
 		Context ctx = cordova.getActivity().getApplicationContext();
-
-		CordovaUtils utils = new CordovaUtils();
-		Map configs = utils.loadConfigFromXml(cordova.getActivity().getResources(), ctx.getPackageName());
-
-		Log.i(LOGTAG, configs.toString());
 
 		try {
 			this.parseAPKLayout();
@@ -176,6 +170,13 @@ public class WebServer extends NanoHTTPD {
 					Log.i(LOGTAG, "Expansion file: " + this.expansionFile.toString());
 			}
 		} else {
+			CordovaUtils utils = new CordovaUtils();
+			Map config = utils.loadConfigFromXml(cordova.getActivity().getResources(), ctx.getPackageName());
+
+			if (DEBUG)
+				Log.i(LOGTAG, config.toString());
+
+			xapk.XAPKDownloaderService.BASE64_PUBLIC_KEY = config.get("XAPK_PUBLIC_KEY");
 			this.downloadExpansionIfAvailable();
 		}
 	}
