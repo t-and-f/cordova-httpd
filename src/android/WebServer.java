@@ -3,31 +3,44 @@ package com.rjfun.cordova.httpd;
 import xapk.*;
 
 import org.apache.cordova.CordovaInterface;
-import com.google.code.gson;
+import com.google.gson.Gson;
+import com.google.gson.JsonParser;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonParseException;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.InetSocketAddress;
-import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.List;
+import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.Properties;
 import java.util.StringTokenizer;
 
 import android.content.Context;
+import android.content.res.AssetManager;
 import android.content.res.AssetFileDescriptor;
 import android.util.Log;
 
 public class WebServer extends NanoHTTPD {
 	private final String LOGTAG = "CorHTTPD";
 
+	private final Boolean DEBUG = true; 
+
 	private CordovaInterface cordova = null;
 
 	private AndroidFile myRootDir = null;
 
 	private XAPKZipResourceFile expansionFile = null;
+
+	private ArrayList<String> activePaths = new ArrayList<>();
 
 	/**
 	 * Hashtable mapping (String)FILENAME_EXTENSION -> (String)MIME_TYPE
@@ -58,19 +71,73 @@ public class WebServer extends NanoHTTPD {
 		this.init(wwwroot, cordova);
 	}
 
+	private void parseAPKLayout() throws IOException, JsonParseException {
+		// Read config of xapk(s).
+		AssetManager assetManager = this.cordova.getActivity().getAssets();
+		Gson gson = new Gson();
+		BufferedReader configReader = new BufferedReader(new InputStreamReader(assetManager.open("www/www/xapk-conf.json")));
+		
+		JsonParser parser = new JsonParser();  
+		JsonElement rootNode = parser.parse(configReader); 
+		configReader.close();		  
+
+		if (DEBUG) Log.i(LOGTAG, "Parsed JSON config to tree");
+		if (rootNode.isJsonObject()) {
+			JsonObject root = rootNode.getAsJsonObject(); 
+			
+			if (root.has("layout")) {
+				JsonElement layout = root.get("layout");  
+				JsonObject layoutNode = layout.getAsJsonObject();
+
+				if (layoutNode.has("main")) {
+					JsonArray main = layoutNode.getAsJsonArray("main");
+					List<String> mainRecords = gson.fromJson(main, List.class);
+					for (String mainEntry : mainRecords) {
+						if (DEBUG) Log.i(LOGTAG, mainEntry);
+						this.activePaths.add(mainEntry);
+					}
+				}
+
+				if (layoutNode.has("patch")) {
+					JsonArray patch = layoutNode.getAsJsonArray("patch");
+					List<String> patchRecords = gson.fromJson(patch, List.class);
+					for (String patchEntry : patchRecords) {
+						if (DEBUG) Log.i(LOGTAG, patchEntry);
+						this.activePaths.add(patchEntry);
+					}
+				}
+			}
+		}
+	}
+
 	private void init(AndroidFile wwwroot, CordovaInterface cordova) throws IOException {
 		this.myRootDir = wwwroot;
 		this.cordova = cordova;
 		Context ctx = cordova.getActivity().getApplicationContext();
 
-		Log.i(LOGTAG, "OBB dir: " + ctx.getObbDir());
-		// Retrieve the expansion file.
+		try {
+			this.parseAPKLayout();
+		}
+		catch(IOException | JsonParseException ex) {
+			Log.e(LOGTAG, "Could not parse the apk layout file", ex);
+		}
+
+		// Retrieve the expansion file(s).
+		if (DEBUG) Log.i(LOGTAG, "OBB dir: " + ctx.getObbDir());
+
+		// By design, Google libraries bundle both APK Expansions, if available, 
+		// into one XAPKZipResourceFile resource. Any file is requested is 
+		// looked up first in the patch APK, then the main.
 		this.expansionFile = XAPKExpansionSupport.getAPKExpansionZipFile(ctx, 1, 1);
 		if (null != this.expansionFile) {
-			Log.i(LOGTAG, "Expansion file: " + this.expansionFile.toString());
+			if (DEBUG) Log.i(LOGTAG, "Expansion file: " + this.expansionFile.toString());
 
-			Object[] listing = this.expansionFile.getAllEntries();
-			Log.i(LOGTAG, "Expansion file content: " + Arrays.toString(listing));
+			/* XAPKZipResourceFile.ZipEntryRO[] listing = this.expansionFile.getEntriesAt("assets/objects");
+
+			for (XAPKZipResourceFile.ZipEntryRO zipEntry: listing) {
+				if (DEBUG) Log.i(LOGTAG, zipEntry.mFileName);
+			} */
+
 		}
 	}
 
@@ -90,15 +157,22 @@ public class WebServer extends NanoHTTPD {
 	 */
 	@SuppressWarnings("rawtypes")
 	public Response serve(String uri, String method, Properties header, Properties parms, Properties files) {
-		String basePath = "/www/assets/";
-
-		if (uri.startsWith(basePath)) {
-			String path = (uri.split(basePath))[1];
-			Log.i(LOGTAG, method + " '" + uri + "' is in target folder");
-			return this.serveFromAPK(path, header, myRootDir);
+		boolean inApk = false;
+		String realPath = uri.startsWith("/www/") ? uri.replaceFirst("/www/", "") : uri;
+		
+		// Check if uri is part of apk definitions
+		for (String activePath: this.activePaths) {
+			if (realPath.startsWith(activePath)) {
+				inApk = true;
+			}
+		}
+		
+		if (inApk) {
+			if (DEBUG) Log.i(LOGTAG, method + " '" + uri + "' is in target folder");
+			return this.serveFromAPK(realPath, header, myRootDir);
 
 		} else {
-			Log.i(LOGTAG, method + " '" + uri + "' ");
+			if (DEBUG) Log.i(LOGTAG, method + " '" + uri + "' ");
 			return serveFile(uri, header, myRootDir, true);
 		}
 	}
@@ -123,12 +197,12 @@ public class WebServer extends NanoHTTPD {
 
 		try {
 			result = this.expansionFile.getAssetFileDescriptor(path);
+			if (DEBUG) Log.i(LOGTAG, "Retrieved " + path);
+			if (DEBUG) Log.i(LOGTAG, result.toString());
 			in = result.createInputStream();
-			Log.i(LOGTAG, "Retrieved " + path);
-			Log.i(LOGTAG, "Descriptor: " + result.toString());
-
 		} catch (Exception e) {
 			// throw new FileNotFoundException();
+			if (DEBUG) Log.e(LOGTAG, "Failed to retrieve " + path);
 			res = new Response(HTTP_INTERNALERROR, MIME_PLAINTEXT, "Failed to retrieve " + path);
 		}
 
@@ -206,4 +280,3 @@ public class WebServer extends NanoHTTPD {
 		return res;
 	}
 }
-
