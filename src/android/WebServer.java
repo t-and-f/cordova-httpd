@@ -40,6 +40,8 @@ public class WebServer extends NanoHTTPD {
 
 	private XAPKZipResourceFile expansionFile = null;
 
+	private String apkVersion = "1";
+
 	private ArrayList<String> activePaths = new ArrayList<>();
 
 	/**
@@ -84,6 +86,10 @@ public class WebServer extends NanoHTTPD {
 		if (DEBUG) Log.i(LOGTAG, "Parsed JSON config to tree");
 		if (rootNode.isJsonObject()) {
 			JsonObject root = rootNode.getAsJsonObject(); 
+
+			if (root.has("apkVersion")) {
+				this.apkVersion = root.get("apkVersion").getAsString();
+			}
 			
 			if (root.has("layout")) {
 				JsonElement layout = root.get("layout");  
@@ -128,16 +134,10 @@ public class WebServer extends NanoHTTPD {
 		// By design, Google libraries bundle both APK Expansions, if available, 
 		// into one XAPKZipResourceFile resource. Any file is requested is 
 		// looked up first in the patch APK, then the main.
-		this.expansionFile = XAPKExpansionSupport.getAPKExpansionZipFile(ctx, 1, 1);
+		int version = Integer.parseInt(this.apkVersion); 
+		this.expansionFile = XAPKExpansionSupport.getAPKExpansionZipFile(ctx, version, version);
 		if (null != this.expansionFile) {
 			if (DEBUG) Log.i(LOGTAG, "Expansion file: " + this.expansionFile.toString());
-
-			/* XAPKZipResourceFile.ZipEntryRO[] listing = this.expansionFile.getEntriesAt("assets/objects");
-
-			for (XAPKZipResourceFile.ZipEntryRO zipEntry: listing) {
-				if (DEBUG) Log.i(LOGTAG, zipEntry.mFileName);
-			} */
-
 		}
 	}
 
