@@ -24,15 +24,16 @@ import com.google.android.vending.expansion.downloader.DownloadProgressInfo;
 // import com.google.android.vending.expansion.downloader.DownloaderClientMarshaller;
 // import com.google.android.vending.expansion.downloader.DownloaderServiceMarshaller;
 import com.google.android.vending.expansion.downloader.Helpers;
-import com.google.android.vending.expansion.downloader.IDownloaderClient;
 import com.google.android.vending.expansion.downloader.IDownloaderService;
+import com.google.android.vending.expansion.downloader.impl.DownloaderProxy;
 // import com.google.android.vending.expansion.downloader.IStub;
 
 import org.apache.cordova.CordovaWebView;
 import java.io.File;
 
-public class XAPKDownloaderActivity extends Activity implements IDownloaderClient {
-	// private IStub mDownloaderClientStub;
+public class XAPKDownloaderActivity extends Activity {
+	private final XAPKDownloaderClient mClient = new XAPKDownloaderClient();
+	private final DownloaderProxy mDownloaderProxy = new DownloaderProxy(this);
 	private IDownloaderService mRemoteService;
 	private ProgressDialog mProgressDialog;
 	private static final String LOG_TAG = "XAPKDownloader";
@@ -84,7 +85,6 @@ public class XAPKDownloaderActivity extends Activity implements IDownloaderClien
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
-
 		if (cordovaActivity != null) {
 			// <Workaround for Cordova/Crosswalk flickering status bar bug./>
 			cordovaActivity.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_FORCE_NOT_FULLSCREEN);
@@ -94,6 +94,7 @@ public class XAPKDownloaderActivity extends Activity implements IDownloaderClien
 		}
 
 		super.onCreate(savedInstanceState);
+		mDownloaderProxy.connect();
 		xmlData = getIntent().getExtras(); // savedInstanceState;
 		versionList[0] = this.getIntent().getIntExtra("xapk_main_version", 0);
 		versionList[1] = this.getIntent().getIntExtra("xapk_patch_version", 0);
@@ -209,6 +210,7 @@ public class XAPKDownloaderActivity extends Activity implements IDownloaderClien
 	protected void onStart() {
 		// if (null != mDownloaderClientStub) mDownloaderClientStub.connect (this);
 		super.onStart();
+		this.mClient.register(this);
 	}
 
 	// Connect the stub from our service on resume.
@@ -222,94 +224,15 @@ public class XAPKDownloaderActivity extends Activity implements IDownloaderClien
 	@Override
 	protected void onStop() {
 		// if (null != mDownloaderClientStub) mDownloaderClientStub.disconnect (this);
+		this.mClient.unregister(this);
 		super.onStop();
 	}
 
-	/* @Override */ public void onServiceConnected(Messenger m) {
-		// mRemoteService = DownloaderServiceMarshaller.CreateProxy (m);
-		// mRemoteService.onClientUpdated (mDownloaderClientStub.getMessenger());
-	}
-
 	@Override
-	public void onDownloadProgress(DownloadProgressInfo progress) {
-		if (progressInMB) {
-			int progressMB = (int) progress.mOverallProgress / 1024 / 1024;
-			Log.v(LOG_TAG, "DownloadProgress: " + Integer.toString(progressMB) + " MB");
-			mProgressDialog.setProgress(progressMB);
-			int totalMB = (int) progress.mOverallTotal / 1024 / 1024;
-			// Make sure the dialogue shows the correct file size, as obtained from the
-			// downloader.
-			// (Our initial max size is based on the project's config, and is likely
-			// incorrect.)
-			if (mProgressDialog.getMax() != totalMB) {
-				mProgressDialog.setMax(totalMB);
-			}
-
-		} else {
-			long percents = progress.mOverallProgress * 100 / progress.mOverallTotal;
-			Log.v(LOG_TAG, "DownloadProgress: " + Long.toString(percents) + "%");
-			mProgressDialog.setProgress((int) percents);
-		}
-	}
-
-	@Override
-	public void onDownloadStateChanged(int newState) {
-		Log.v(LOG_TAG,
-				"DownloadStateChanged: " + getString(Helpers.getDownloaderStringResourceIDFromState(newState)) + ".");
-
-		if ((newState == STATE_IDLE) || (newState == STATE_FETCHING_URL) || (newState == STATE_CONNECTING)
-				|| (newState == STATE_DOWNLOADING) || (newState == STATE_PAUSED_NETWORK_UNAVAILABLE)
-				|| (newState == STATE_PAUSED_BY_REQUEST)
-				|| (newState == STATE_PAUSED_WIFI_DISABLED_NEED_CELLULAR_PERMISSION)
-				|| (newState == STATE_PAUSED_NEED_CELLULAR_PERMISSION) || (newState == STATE_PAUSED_ROAMING)) {
-			Log.v(LOG_TAG, "Downloading...");
-			return;
-		}
-
-		if (newState == STATE_COMPLETED) {
-			Log.v(LOG_TAG, "Download complete");
-			mProgressDialog.setMessage(xmlData.getString("xapk_text_preparing_assets", ""));
-
-			if (xmlData != null) {
-				Log.v(LOG_TAG, "Starting up expansion authority.");
-				String expansionAuthority = xmlData.getString("xapk_expansion_authority");
-				this.getApplicationContext().getContentResolver().call(Uri.parse("content://" + expansionAuthority),
-						"download_completed", null, null);
-
-				// Now that we've started up the expansion authority,
-				// we need to reload the webview (if it's still open), in case
-				// it's already displaying some images from the expansion as broken
-				// image links.
-				if (autoReload && cordovaWebView != null) {
-					Log.v(LOG_TAG, "Reloading Cordova webview");
-					cordovaWebView.loadUrl(cordovaWebView.getUrl());
-				} else if (!autoReload && cordovaWebView != null) {
-					final Intent intent = new Intent("XAPK_Download_finished");
-					LocalBroadcastManager.getInstance(this).sendBroadcastSync(intent);
-				} else {
-					Log.w(LOG_TAG, "Couldn't reload Cordova webview");
-				}
-
-			} else {
-				Log.e(LOG_TAG, "Couldn't start expansion authority.");
-			}
-
-			// Dismiss progress dialog.
-			mProgressDialog.dismiss();
-
-			// If something wrong happened with the download, send a soft log error.
-			allExpansionFilesKnownAsDelivered(versionList, fileSizeList);
-
-			// Finish the activity.
-			finish();
-			return;
-		}
-
-		// All other states.
-		Builder alert = new AlertDialog.Builder(this);
-		alert.setTitle(xmlData.getString("xapk_text_error", ""));
-		alert.setMessage(xmlData.getString("xapk_text_download_failed", ""));
-		alert.setNeutralButton(xmlData.getString("xapk_text_close", ""), null);
-		alert.show();
+	protected void onDestroy() {
+		super.onDestroy();
+		// Don't forget to unbind the proxy when you don't
+		// need it anymore
+		mDownloaderProxy.disconnect();
 	}
 }

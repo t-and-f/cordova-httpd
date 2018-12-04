@@ -25,7 +25,7 @@ import android.util.Log;
 public class CordovaUtils {
     private final String LOGTAG = "CordovaUtils";
     // restrict the set of preference names we are accepting
-    private List<String> supportedKeys = new ArrayList(Arrays.asList("XAPK_PUBLIC_KEY"));
+    private List<String> supportedKeys = new ArrayList<String>(Arrays.asList("XAPK_PUBLIC_KEY"));
 
     private final String preferenceTag = "preference";
 
@@ -41,7 +41,7 @@ public class CordovaUtils {
 		
         XmlResourceParser xrp = res.getXml(configXmlResourceId);
 
-        Map configs = new HashMap();
+        Map<String,String> configs = new HashMap<>();
 
         //
         // walk the config.xml tree and save all <preference> tags we want

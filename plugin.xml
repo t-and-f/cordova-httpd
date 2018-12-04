@@ -50,6 +50,7 @@
 		<source-file src="src/android/NanoHTTPD.java" target-dir="src/com/rjfun/cordova/httpd" />
 		<source-file src="src/android/WebServer.java" target-dir="src/com/rjfun/cordova/httpd" />
 		<source-file src="src/android/xapk/XAPKDownloaderActivity.java" target-dir="src/com/rjfun/cordova/httpd/xapk" />
+		<source-file src="src/android/xapk/XAPKDownloaderClient.java" target-dir="src/com/rjfun/cordova/httpd/xapk" />
 		<source-file src="src/android/xapk/XAPKDownloaderService.java" target-dir="src/com/rjfun/cordova/httpd/xapk" />
 		<source-file src="src/android/xapk/XAPKExpansionSupport.java" target-dir="src/com/rjfun/cordova/httpd/xapk" />
 		<source-file src="src/android/xapk/XAPKZipResourceFile.java" target-dir="src/com/rjfun/cordova/httpd/xapk" />
