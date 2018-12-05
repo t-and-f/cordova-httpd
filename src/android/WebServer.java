@@ -164,12 +164,10 @@ public class WebServer extends NanoHTTPD {
 		// looked up first in the patch APK, then the main.
 		int version = Integer.parseInt(this.apkVersion);
 
-		if (utils.signatureIsDebug(ctx)) {
-			this.expansionFile = XAPKExpansionSupport.getAPKExpansionZipFile(ctx, version, version);
-			if (null != this.expansionFile) {
-				if (DEBUG)
-					Log.i(LOGTAG, "Expansion file: " + this.expansionFile.toString());
-			}
+		this.expansionFile = XAPKExpansionSupport.getAPKExpansionZipFile(ctx, version, version);
+		if (null != this.expansionFile) {
+			if (DEBUG)
+				Log.i(LOGTAG, "Expansion file: " + this.expansionFile.toString());
 		} else {
 			Map config = utils.loadConfigFromXml(cordova.getActivity().getResources(), ctx.getPackageName());
 
