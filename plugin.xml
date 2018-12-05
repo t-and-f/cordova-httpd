@@ -29,6 +29,7 @@
 		<clobbers target="cordova.plugins.CorHttpd" />
 	</js-module>
 	<platform name="android">
+		<preference name="XAPK_PUBLIC_KEY" default="YOUR_GOOGLE_PLAY_LICENSE_KEY" />
 		<config-file parent="/*" target="res/xml/config.xml">
 			<feature name="CorHttpd">
 				<param name="android-package" value="com.rjfun.cordova.httpd.CorHttpd" />
@@ -39,15 +40,21 @@
 			<uses-permission android:name="android.permission.INTERNET" />
 			<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 		</config-file>
+		<config-file target="AndroidManifest.xml" parent="application">
+			<activity android:name="xapk.XAPKDownloaderActivity" android:label="@string/app_name" android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale" />
+			<service android:name="xapk.XAPKDownloaderService" />
+		</config-file>
 		<framework src="com.github.bolein:better-licensing:1.5.0" />
 		<framework src="com.github.bolein.better-apk-expansion:downloader_library:5.0.3" />
 		<framework src="com.google.code.gson:gson:2.8.5" />
 		<framework src="build-extras.gradle" custom="true" type="gradleReference" />
 		<source-file src="src/android/CorHttpd.java" target-dir="src/com/rjfun/cordova/httpd" />
+		<source-file src="src/android/CordovaUtils.java" target-dir="src/com/rjfun/cordova/httpd" />
 		<source-file src="src/android/AndroidFile.java" target-dir="src/com/rjfun/cordova/httpd" />
 		<source-file src="src/android/NanoHTTPD.java" target-dir="src/com/rjfun/cordova/httpd" />
 		<source-file src="src/android/WebServer.java" target-dir="src/com/rjfun/cordova/httpd" />
 		<source-file src="src/android/xapk/XAPKDownloaderActivity.java" target-dir="src/com/rjfun/cordova/httpd/xapk" />
+		<source-file src="src/android/xapk/XAPKDownloaderClient.java" target-dir="src/com/rjfun/cordova/httpd/xapk" />
 		<source-file src="src/android/xapk/XAPKDownloaderService.java" target-dir="src/com/rjfun/cordova/httpd/xapk" />
 		<source-file src="src/android/xapk/XAPKExpansionSupport.java" target-dir="src/com/rjfun/cordova/httpd/xapk" />
 		<source-file src="src/android/xapk/XAPKZipResourceFile.java" target-dir="src/com/rjfun/cordova/httpd/xapk" />

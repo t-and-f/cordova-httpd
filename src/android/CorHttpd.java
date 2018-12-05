@@ -6,6 +6,8 @@ import java.net.InetSocketAddress;
 import java.util.Enumeration;
 
 import org.apache.cordova.CordovaPlugin;
+import org.apache.cordova.CordovaInterface;
+import org.apache.cordova.CordovaWebView;
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.PluginResult;
 import org.apache.cordova.PluginResult.Status;
@@ -40,7 +42,9 @@ public class CorHttpd extends CordovaPlugin {
 	private WebServer server = null;
 	private String	url = "";
 
-    public void pluginInitialize() {
+    @Override
+    public void initialize(CordovaInterface cordova, CordovaWebView webView) {
+        super.initialize(cordova, webView);
         www_root = preferences.getString(OPT_WWW_ROOT, "");
         port = preferences.getInteger(OPT_PORT, 8888);
         localhost_only = preferences.getBoolean(OPT_LOCALHOST_ONLY, true);
@@ -95,9 +99,9 @@ public class CorHttpd extends CordovaPlugin {
     		
     		if(localhost_only) {
     			InetSocketAddress localAddr = new InetSocketAddress(InetAddress.getByAddress(new byte[]{127,0,0,1}), port);
-    			server = new WebServer(localAddr, f, cordova);
+    			server = new WebServer(localAddr, f, cordova, webView);
     		} else {
-    			server = new WebServer(port, f, cordova);
+    			server = new WebServer(port, f, cordova, webView);
     		}
 		} catch (IOException e) {
 			errmsg = String.format("IO Exception: %s", e.getMessage());
