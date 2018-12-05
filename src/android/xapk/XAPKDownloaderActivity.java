@@ -21,12 +21,9 @@ import android.view.WindowManager;
 import android.util.Log;
 
 import com.google.android.vending.expansion.downloader.DownloadProgressInfo;
-// import com.google.android.vending.expansion.downloader.DownloaderClientMarshaller;
-// import com.google.android.vending.expansion.downloader.DownloaderServiceMarshaller;
 import com.google.android.vending.expansion.downloader.Helpers;
 import com.google.android.vending.expansion.downloader.IDownloaderService;
 import com.google.android.vending.expansion.downloader.impl.DownloaderProxy;
-// import com.google.android.vending.expansion.downloader.IStub;
 
 import org.apache.cordova.CordovaWebView;
 import java.io.File;
@@ -126,7 +123,7 @@ public class XAPKDownloaderActivity extends Activity {
 			Intent notifierIntent = new Intent(XAPKDownloaderActivity.this, XAPKDownloaderActivity.this.getClass());
 			notifierIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
 			notifierIntent.setAction(launchIntent.getAction());
-			notifierIntent.putExtras(launchIntent.getExtras());
+			// notifierIntent.putExtras(launchIntent.getExtras());
 
 			if (launchIntent.getCategories() != null) {
 				for (String category : launchIntent.getCategories()) {
@@ -164,13 +161,10 @@ public class XAPKDownloaderActivity extends Activity {
 
 			// If download has started, initialize activity to show progress.
 			Log.v(LOG_TAG, "Initializing activity to show progress.");
-			// Instantiate a member instance of IStub.
-			// mDownloaderClientStub = DownloaderClientMarshaller.CreateStub (this,
-			// XAPKDownloaderService.class);
 			// Shows download progress.
 			mProgressDialog = new ProgressDialog(XAPKDownloaderActivity.this);
 			mProgressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
-			mProgressDialog.setMessage(xmlData.getString("xapk_text_downloading_assets", ""));
+			// mProgressDialog.setMessage(xmlData.getString("xapk_text_downloading_assets", ""));
 			mProgressDialog.setCancelable(false);
 
 			// Setup for displaying progress in MB (instead of default, percentage)
@@ -197,7 +191,7 @@ public class XAPKDownloaderActivity extends Activity {
 			Log.e(LOG_TAG, "Cannot find own package! MAYDAY!");
 			e.printStackTrace();
 		} catch (Exception e) {
-			Log.e(LOG_TAG, e.getMessage());
+			Log.e(LOG_TAG, "Exception during startup", e);
 			e.printStackTrace();
 		}
 
@@ -208,7 +202,6 @@ public class XAPKDownloaderActivity extends Activity {
 	// Connect the stub to our service on start.
 	@Override
 	protected void onStart() {
-		// if (null != mDownloaderClientStub) mDownloaderClientStub.connect (this);
 		super.onStart();
 		this.mClient.register(this);
 	}
@@ -216,14 +209,12 @@ public class XAPKDownloaderActivity extends Activity {
 	// Connect the stub from our service on resume.
 	@Override
 	protected void onResume() {
-		// if (null != mDownloaderClientStub) mDownloaderClientStub.connect (this);
 		super.onResume();
 	}
 
 	// Disconnect the stub from our service on stop.
 	@Override
 	protected void onStop() {
-		// if (null != mDownloaderClientStub) mDownloaderClientStub.disconnect (this);
 		this.mClient.unregister(this);
 		super.onStop();
 	}
