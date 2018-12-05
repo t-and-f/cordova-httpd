@@ -4,7 +4,6 @@ import com.google.android.vending.expansion.downloader.DownloadProgressInfo;
 import com.google.android.vending.expansion.downloader.Helpers;
 import com.google.android.vending.expansion.downloader.impl.BroadcastDownloaderClient;
 
-import 	android.app.AlertDialog;
 import android.util.Log;
 
 public class XAPKDownloaderClient extends BroadcastDownloaderClient {

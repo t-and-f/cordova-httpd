@@ -22,7 +22,6 @@ import android.util.Log;
 
 import com.google.android.vending.expansion.downloader.DownloadProgressInfo;
 import com.google.android.vending.expansion.downloader.Helpers;
-import com.google.android.vending.expansion.downloader.IDownloaderService;
 import com.google.android.vending.expansion.downloader.impl.DownloaderProxy;
 
 import org.apache.cordova.CordovaWebView;
@@ -31,7 +30,6 @@ import java.io.File;
 public class XAPKDownloaderActivity extends Activity {
 	private final XAPKDownloaderClient mClient = new XAPKDownloaderClient();
 	private final DownloaderProxy mDownloaderProxy = new DownloaderProxy(this);
-	private IDownloaderService mRemoteService;
 	private ProgressDialog mProgressDialog;
 	private static final String LOG_TAG = "XAPKDownloader";
 	private Bundle xmlData;
@@ -82,6 +80,8 @@ public class XAPKDownloaderActivity extends Activity {
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
+		CordovaUtils utils = new CordovaUtils();
+
 		if (cordovaActivity != null) {
 			// <Workaround for Cordova/Crosswalk flickering status bar bug./>
 			cordovaActivity.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_FORCE_NOT_FULLSCREEN);
@@ -133,8 +133,6 @@ public class XAPKDownloaderActivity extends Activity {
 
 			PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notifierIntent,
 					PendingIntent.FLAG_UPDATE_CURRENT);
-
-			CordovaUtils utils = new CordovaUtils();
 
 			// We can't attempt downloading the files with a debug signature.
 			if (utils.signatureIsDebug(this)) {
