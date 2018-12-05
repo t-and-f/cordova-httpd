@@ -182,7 +182,7 @@ public class XAPKDownloaderActivity extends Activity {
 				mProgressDialog.setProgressNumberFormat("%1dMB / %2dMB");
 			}
 
-			mProgressDialog.show();
+			// mProgressDialog.show();
 			return;
 
 		} catch (NameNotFoundException e) {
