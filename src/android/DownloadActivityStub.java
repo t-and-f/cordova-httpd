@@ -1,6 +1,6 @@
 package com.rjfun.cordova.httpd;
 
-import xapk.*;
+import xapk.XAPKDownloaderActivity;
 
 import org.apache.cordova.CordovaInterface;
 import org.apache.cordova.CordovaWebView;
