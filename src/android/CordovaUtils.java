@@ -30,18 +30,18 @@ public class CordovaUtils {
     private final String preferenceTag = "preference";
 
     // Find out if we're in a debug or release build.
-	// Debug builds can't get downloads from Google Play. We need to know that
-	// before starting DownloaderClientMarshaller.
-	// Thanks to Omar Rehman: http://stackoverflow.com/a/11535593/1136569.
-	private final String DEBUG_DN = "CN=Android Debug";
+    // Debug builds can't get downloads from Google Play. We need to know that
+    // before starting DownloaderClientMarshaller.
+    // Thanks to Omar Rehman: http://stackoverflow.com/a/11535593/1136569.
+    private final String DEBUG_DN = "CN=Android Debug";
 
     public Map loadConfigFromXml(Resources res, String packageName) {
         //
         int configXmlResourceId = res.getIdentifier("config", "xml", packageName);
-		
+
         XmlResourceParser xrp = res.getXml(configXmlResourceId);
 
-        Map<String,String> configs = new HashMap<>();
+        Map<String, String> configs = new HashMap<>();
 
         //
         // walk the config.xml tree and save all <preference> tags we want
@@ -80,24 +80,24 @@ public class CordovaUtils {
     }
 
     public boolean signatureIsDebug(Context ctx) {
-		boolean isDebug = false;
-		try {
-			PackageInfo pinfo = ctx.getPackageManager().getPackageInfo(ctx.getPackageName(),
-					PackageManager.GET_SIGNATURES);
-			Signature signatures[] = pinfo.signatures;
-			CertificateFactory cf = CertificateFactory.getInstance("X.509");
-			for (int i = 0; i < signatures.length; i++) {
-				ByteArrayInputStream stream = new ByteArrayInputStream(signatures[i].toByteArray());
-				X509Certificate cert = (X509Certificate) cf.generateCertificate(stream);
-				isDebug = cert.getSubjectX500Principal().toString().contains(DEBUG_DN);
-				if (isDebug)
-					break;
-			}
-		} catch (NameNotFoundException e) {
-			// The "isDebug" variable will remain false.
-		} catch (CertificateException e) {
-			// The "isDebug" variable will remain false.
-		}
-		return isDebug;
-	}
+        boolean isDebug = false;
+        try {
+            PackageInfo pinfo = ctx.getPackageManager().getPackageInfo(ctx.getPackageName(),
+                    PackageManager.GET_SIGNATURES);
+            Signature signatures[] = pinfo.signatures;
+            CertificateFactory cf = CertificateFactory.getInstance("X.509");
+            for (int i = 0; i < signatures.length; i++) {
+                ByteArrayInputStream stream = new ByteArrayInputStream(signatures[i].toByteArray());
+                X509Certificate cert = (X509Certificate) cf.generateCertificate(stream);
+                isDebug = cert.getSubjectX500Principal().toString().contains(DEBUG_DN);
+                if (isDebug)
+                    break;
+            }
+        } catch (NameNotFoundException e) {
+            // The "isDebug" variable will remain false.
+        } catch (CertificateException e) {
+            // The "isDebug" variable will remain false.
+        }
+        return isDebug;
+    }
 }

@@ -127,19 +127,7 @@ public class WebServer extends NanoHTTPD {
 	}
 
 	private void downloadExpansionIfAvailable() {
-		cordova.getActivity().runOnUiThread(new Runnable() {
-			@Override
-			public void run() {
-				XAPKDownloaderActivity.cordovaActivity = cordova.getActivity(); // Workaround for Cordova/Crosswalk
-																				// flickering status bar bug.
-				// Provide a webview to Downloader Activity so it can trigger a page reload once
-				// the expansion is downloaded.
-				XAPKDownloaderActivity.cordovaWebView = webView;
-				Context context = cordova.getActivity().getApplicationContext();
-				Intent intent = new Intent(context, XAPKDownloaderActivity.class);
-				cordova.getActivity().startActivity(intent);
-			}
-		});
+		cordova.getActivity().runOnUiThread(new DownloadActivityStub(this.cordova, this.webView));
 	}
 
 	private void init(AndroidFile wwwroot, CordovaInterface cordova, CordovaWebView webView) throws IOException {
@@ -148,7 +136,7 @@ public class WebServer extends NanoHTTPD {
 		this.webView = webView;
 		Context ctx = cordova.getActivity().getApplicationContext();
 		CordovaUtils utils = new CordovaUtils();
-
+		
 		try {
 			this.parseAPKLayout();
 		} catch (IOException | JsonParseException ex) {
@@ -160,7 +148,7 @@ public class WebServer extends NanoHTTPD {
 			Log.i(LOGTAG, "OBB dir: " + ctx.getObbDir());
 
 		// By design, Google libraries bundle both APK Expansions, if available,
-		// into one XAPKZipResourceFile resource. Any file is requested is
+		// into one XAPKZipResourceFile resource. Any file requested is
 		// looked up first in the patch APK, then the main.
 		int version = Integer.parseInt(this.apkVersion);
 

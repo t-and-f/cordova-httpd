@@ -2,12 +2,12 @@ package xapk;
 
 import com.rjfun.cordova.httpd.CordovaUtils;
 
+import org.apache.cordova.CordovaWebView;
+import java.io.File;
+
 import android.content.Context;
 import android.app.Activity;
-import android.app.AlertDialog;
-import android.app.AlertDialog.Builder;
 import android.app.PendingIntent;
-import android.app.ProgressDialog;
 import android.content.Intent;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.net.Uri;
@@ -15,27 +15,22 @@ import android.os.Bundle;
 import android.os.Messenger;
 import android.support.v4.content.LocalBroadcastManager;
 
+import com.google.android.vending.expansion.downloader.DownloadProgressInfo;
+import com.google.android.vending.expansion.downloader.Helpers;
+import com.google.android.vending.expansion.downloader.impl.DownloaderProxy;
+
 // <Workaround for Cordova/Crosswalk flickering status bar bug./>
 import android.view.WindowManager;
 // <Workaround for Cordova/Crosswalk flickering status bar bug./>
 import android.util.Log;
 
-import com.google.android.vending.expansion.downloader.DownloadProgressInfo;
-import com.google.android.vending.expansion.downloader.Helpers;
-import com.google.android.vending.expansion.downloader.impl.DownloaderProxy;
-
-import org.apache.cordova.CordovaWebView;
-import java.io.File;
-
 public class XAPKDownloaderActivity extends Activity {
-	private final XAPKDownloaderClient mClient = new XAPKDownloaderClient();
+	private final XAPKDownloaderClient mClient = new XAPKDownloaderClient(this);
 	private final DownloaderProxy mDownloaderProxy = new DownloaderProxy(this);
-	private ProgressDialog mProgressDialog;
 	private static final String LOG_TAG = "XAPKDownloader";
 	private Bundle xmlData;
 	private int[] versionList = new int[2];
 	private long[] fileSizeList = new long[2];
-	private boolean progressInMB = false;
 	private boolean autoReload = true;
 	private Bundle bundle;
 
@@ -81,7 +76,7 @@ public class XAPKDownloaderActivity extends Activity {
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		CordovaUtils utils = new CordovaUtils();
-
+		
 		if (cordovaActivity != null) {
 			// <Workaround for Cordova/Crosswalk flickering status bar bug./>
 			cordovaActivity.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_FORCE_NOT_FULLSCREEN);
@@ -92,20 +87,6 @@ public class XAPKDownloaderActivity extends Activity {
 
 		super.onCreate(savedInstanceState);
 		mDownloaderProxy.connect();
-		xmlData = getIntent().getExtras(); // savedInstanceState;
-		versionList[0] = this.getIntent().getIntExtra("xapk_main_version", 0);
-		versionList[1] = this.getIntent().getIntExtra("xapk_patch_version", 0);
-		fileSizeList[0] = this.getIntent().getLongExtra("xapk_main_file_size", 0L);
-		fileSizeList[1] = this.getIntent().getLongExtra("xapk_patch_file_size", 0L);
-		String progressFormat = this.getIntent().getStringExtra("xapk_progress_format");
-		Boolean autoReload = this.getIntent().getBooleanExtra("xapk_auto_reload", true);
-		if (progressFormat != null && progressFormat.toLowerCase().equals("megabytes")) {
-			this.progressInMB = true;
-		}
-
-		if (autoReload != null) {
-			this.autoReload = autoReload;
-		}
 
 		// Check if both expansion files are already available and downloaded before
 		// going any further.
@@ -123,8 +104,7 @@ public class XAPKDownloaderActivity extends Activity {
 			Intent notifierIntent = new Intent(XAPKDownloaderActivity.this, XAPKDownloaderActivity.this.getClass());
 			notifierIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
 			notifierIntent.setAction(launchIntent.getAction());
-			// notifierIntent.putExtras(launchIntent.getExtras());
-
+			
 			if (launchIntent.getCategories() != null) {
 				for (String category : launchIntent.getCategories()) {
 					notifierIntent.addCategory(category);
@@ -149,47 +129,25 @@ public class XAPKDownloaderActivity extends Activity {
 
 			if (startResult == XAPKDownloaderService.NO_DOWNLOAD_REQUIRED) {
 				if (!autoReload) {
-					final Intent intent = new Intent("XAPK_Download_finished");
-					LocalBroadcastManager.getInstance(this).sendBroadcastSync(intent);
+					final Intent intent = new Intent("XAPK_download_finished");
+					LocalBroadcastManager.getInstance(this.getApplicationContext()).sendBroadcastSync(intent);
 				}
 				Log.v(LOG_TAG, "No download required.");
 				finish();
 				return;
 			}
 
-			// If download has started, initialize activity to show progress.
-			Log.v(LOG_TAG, "Initializing activity to show progress.");
+			// If download has started, initialize client to show progress.
+			Log.v(LOG_TAG, "Initializing download client.");
 			// Shows download progress.
-			mProgressDialog = new ProgressDialog(XAPKDownloaderActivity.this);
-			mProgressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
-			// mProgressDialog.setMessage(xmlData.getString("xapk_text_downloading_assets", ""));
-			mProgressDialog.setCancelable(false);
-
-			// Setup for displaying progress in MB (instead of default, percentage)
-			if (progressInMB) {
-				// Initial guess at file size to download. This will probably be incorrect
-				// unless you're
-				// using XAPK_MAIN_SIZE and XAPK_PATCH_SIZE, but we'll update it when we get the
-				// first
-				// progress callback from the downloader.
-				int totalMB = 0;
-				for (int i = 0; i < fileSizeList.length; i++) {
-					if (fileSizeList[i] > 0) {
-						totalMB += fileSizeList[i];
-					}
-				}
-				mProgressDialog.setMax((int) (fileSizeList[0] / 1024 / 1024));
-				mProgressDialog.setProgressNumberFormat("%1dMB / %2dMB");
-			}
-
-			// mProgressDialog.show();
+			this.mClient.init();
 			return;
 
 		} catch (NameNotFoundException e) {
-			Log.e(LOG_TAG, "Cannot find own package! MAYDAY!");
+			Log.e(LOG_TAG, "Fatal error: cannot find own package.");
 			e.printStackTrace();
 		} catch (Exception e) {
-			Log.e(LOG_TAG, "Exception during startup", e);
+			Log.e(LOG_TAG, "Exception during startup:", e);
 			e.printStackTrace();
 		}
 
