@@ -39,6 +39,7 @@
 		<config-file target="AndroidManifest.xml" parent="/*">
 			<uses-permission android:name="android.permission.INTERNET" />
 			<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+			<application android:usesCleartextTraffic="true" />
 		</config-file>
 		<config-file target="AndroidManifest.xml" parent="application">
 			<activity android:name="xapk.XAPKDownloaderActivity" android:label="@string/app_name" android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale" />
