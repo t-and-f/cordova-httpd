@@ -37,6 +37,8 @@ stopServer( success_callback, error_callback );
 getURL( success_callback, error_callback );
 
 getLocalPath( success_callback, error_callback );
+
+observeDownloadProgress( success_callback, error_callback );
 ```
 
 Example code: (read the comments)
