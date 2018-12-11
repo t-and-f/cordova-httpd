@@ -156,7 +156,7 @@ public class WebServer extends NanoHTTPD {
 		if (null != this.expansionFile) {
 			if (DEBUG)
 				Log.i(LOGTAG, "Expansion file: " + this.expansionFile.toString());
-		} else {
+		} else if(!utils.signatureIsDebug(ctx)) {
 			Map config = utils.loadConfigFromXml(cordova.getActivity().getResources(), ctx.getPackageName());
 
 			if (DEBUG)
