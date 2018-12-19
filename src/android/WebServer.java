@@ -193,6 +193,7 @@ public class WebServer extends NanoHTTPD {
 	public Response serve(String uri, String method, Properties header, Properties parms, Properties files) {
 		boolean inApk = false;
 		String realPath = uri.startsWith("/www/") ? uri.replaceFirst("/www/", "") : uri;
+		Response response = null;
 
 		// Check if uri is part of apk definitions
 		for (String activePath : this.activePaths) {
@@ -204,13 +205,16 @@ public class WebServer extends NanoHTTPD {
 		if (this.apkEnabled && inApk) {
 			if (DEBUG)
 				Log.i(LOGTAG, method + " '" + uri + "' is in target folder");
-			return this.serveFromAPK(realPath, header, myRootDir);
+			response = this.serveFromAPK(realPath, header, myRootDir);
 
 		} else {
 			if (DEBUG)
 				Log.i(LOGTAG, method + " '" + uri + "' ");
-			return serveFile(uri, header, myRootDir, true);
+			response = serveFile(uri, header, myRootDir, true);
 		}
+
+		response.addHeader("Access-Control-Allow-Origin", "*");
+		return response;
 	}
 
 	/**
