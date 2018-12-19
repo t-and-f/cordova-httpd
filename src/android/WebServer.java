@@ -36,7 +36,7 @@ public class WebServer extends NanoHTTPD {
 
 	private final Boolean DEBUG = true;
 
-	private Boolean apkEnabled = true;
+	private Boolean apkEnabled = false;
 
 	private CordovaInterface cordova = null;
 
