@@ -36,6 +36,8 @@ public class WebServer extends NanoHTTPD {
 
 	private final Boolean DEBUG = true;
 
+	private Boolean apkEnabled = true;
+
 	private CordovaInterface cordova = null;
 
 	private CordovaWebView webView = null;
@@ -95,6 +97,10 @@ public class WebServer extends NanoHTTPD {
 		if (rootNode.isJsonObject()) {
 			JsonObject root = rootNode.getAsJsonObject();
 
+			if (root.has("enabled")) {
+				this.apkEnabled = root.get("enabled").getAsBoolean();
+			}
+
 			if (root.has("apkVersion")) {
 				this.apkVersion = root.get("apkVersion").getAsString();
 			}
@@ -136,7 +142,7 @@ public class WebServer extends NanoHTTPD {
 		this.webView = webView;
 		Context ctx = cordova.getActivity().getApplicationContext();
 		CordovaUtils utils = new CordovaUtils();
-		
+
 		try {
 			this.parseAPKLayout();
 		} catch (IOException | JsonParseException ex) {
@@ -152,18 +158,20 @@ public class WebServer extends NanoHTTPD {
 		// looked up first in the patch APK, then the main.
 		int version = Integer.parseInt(this.apkVersion);
 
-		this.expansionFile = XAPKExpansionSupport.getAPKExpansionZipFile(ctx, version, version);
-		if (null != this.expansionFile) {
-			if (DEBUG)
-				Log.i(LOGTAG, "Expansion file: " + this.expansionFile.toString());
-		} else if(!utils.signatureIsDebug(ctx)) {
-			Map config = utils.loadConfigFromXml(cordova.getActivity().getResources(), ctx.getPackageName());
+		if (this.apkEnabled) {
+			this.expansionFile = XAPKExpansionSupport.getAPKExpansionZipFile(ctx, version, version);
+			if (null != this.expansionFile) {
+				if (DEBUG)
+					Log.i(LOGTAG, "Expansion file: " + this.expansionFile.toString());
+			} else if(!utils.signatureIsDebug(ctx)) {
+				Map config = utils.loadConfigFromXml(cordova.getActivity().getResources(), ctx.getPackageName());
 
-			if (DEBUG)
-				Log.i(LOGTAG, config.toString());
+				if (DEBUG)
+					Log.i(LOGTAG, config.toString());
 
-			xapk.XAPKDownloaderService.BASE64_PUBLIC_KEY = config.get("XAPK_PUBLIC_KEY").toString();
-			this.downloadExpansionIfAvailable();
+				xapk.XAPKDownloaderService.BASE64_PUBLIC_KEY = config.get("XAPK_PUBLIC_KEY").toString();
+				this.downloadExpansionIfAvailable();
+			}
 		}
 	}
 
@@ -171,14 +179,14 @@ public class WebServer extends NanoHTTPD {
 	 * (By default, this delegates to serveFile() and allows directory listing.)
 	 *
 	 * @param uri Percent-decoded URI without parameters, for example "/index.cgi"
-	 * 
+	 *
 	 * @param method "GET", "POST" etc.
-	 * 
+	 *
 	 * @param parms Parsed, percent decoded parameters from URI and, in case of
 	 * POST, data.
-	 * 
+	 *
 	 * @param header Header entries, percent decoded
-	 * 
+	 *
 	 * @return HTTP response, see class Response for details
 	 */
 	@SuppressWarnings("rawtypes")
@@ -193,7 +201,7 @@ public class WebServer extends NanoHTTPD {
 			}
 		}
 
-		if (inApk) {
+		if (this.apkEnabled && inApk) {
 			if (DEBUG)
 				Log.i(LOGTAG, method + " '" + uri + "' is in target folder");
 			return this.serveFromAPK(realPath, header, myRootDir);
