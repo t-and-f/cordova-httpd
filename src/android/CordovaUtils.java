@@ -25,7 +25,7 @@ import android.util.Log;
 public class CordovaUtils {
     private final String LOGTAG = "CordovaUtils";
     // restrict the set of preference names we are accepting
-    private List<String> supportedKeys = new ArrayList<String>(Arrays.asList("XAPK_PUBLIC_KEY"));
+    private List<String> supportedKeys = new ArrayList<String>(Arrays.asList("XAPK_PUBLIC_KEY", "XAPK_ENABLED"));
 
     private final String preferenceTag = "preference";
 
