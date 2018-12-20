@@ -29,7 +29,6 @@
 		<clobbers target="cordova.plugins.CorHttpd" />
 	</js-module>
 	<platform name="android">
-		<preference name="XAPK_PUBLIC_KEY" default="YOUR_GOOGLE_PLAY_LICENSE_KEY" />
 		<config-file parent="/*" target="res/xml/config.xml">
 			<feature name="CorHttpd">
 				<param name="android-package" value="com.rjfun.cordova.httpd.CorHttpd" />

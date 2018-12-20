@@ -97,10 +97,6 @@ public class WebServer extends NanoHTTPD {
 		if (rootNode.isJsonObject()) {
 			JsonObject root = rootNode.getAsJsonObject();
 
-			if (root.has("enabled")) {
-				this.apkEnabled = root.get("enabled").getAsBoolean();
-			}
-
 			if (root.has("apkVersion")) {
 				this.apkVersion = root.get("apkVersion").getAsString();
 			}
@@ -142,6 +138,9 @@ public class WebServer extends NanoHTTPD {
 		this.webView = webView;
 		Context ctx = cordova.getActivity().getApplicationContext();
 		CordovaUtils utils = new CordovaUtils();
+		Map config = utils.loadConfigFromXml(cordova.getActivity().getResources(), ctx.getPackageName());
+
+		this.apkEnabled = config.containsKey("XAPK_ENABLED") ? Boolean.parseBoolean(config.get("XAPK_ENABLED").toString()) : false;
 
 		try {
 			this.parseAPKLayout();
@@ -164,12 +163,11 @@ public class WebServer extends NanoHTTPD {
 				if (DEBUG)
 					Log.i(LOGTAG, "Expansion file: " + this.expansionFile.toString());
 			} else if(!utils.signatureIsDebug(ctx)) {
-				Map config = utils.loadConfigFromXml(cordova.getActivity().getResources(), ctx.getPackageName());
 
 				if (DEBUG)
 					Log.i(LOGTAG, config.toString());
 
-				xapk.XAPKDownloaderService.BASE64_PUBLIC_KEY = config.get("XAPK_PUBLIC_KEY").toString();
+				xapk.XAPKDownloaderService.BASE64_PUBLIC_KEY = config.containsKey("XAPK_PUBLIC_KEY") ? config.get("XAPK_PUBLIC_KEY").toString() : null;
 				this.downloadExpansionIfAvailable();
 			}
 		}
