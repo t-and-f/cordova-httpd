@@ -168,7 +168,11 @@ public class WebServer extends NanoHTTPD {
 					Log.i(LOGTAG, config.toString());
 
 				xapk.XAPKDownloaderService.BASE64_PUBLIC_KEY = config.containsKey("XAPK_PUBLIC_KEY") ? config.get("XAPK_PUBLIC_KEY").toString() : null;
-				this.downloadExpansionIfAvailable();
+				try {
+					this.downloadExpansionIfAvailable();
+				} catch (Exception ex) {
+					Log.e(LOGTAG, "Could not parse the public key", ex);
+				}
 			}
 		}
 	}
